@@ -5,7 +5,8 @@
 import os
 from pathlib import Path
 from typing import Dict, Any, List
-from pydantic import BaseSettings, Field
+from pydantic import Field
+from pydantic_settings import BaseSettings
 
 
 class ScopeAgentSettings(BaseSettings):
@@ -63,6 +64,7 @@ class ScopeAgentSettings(BaseSettings):
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "ignore"  # 忽略额外的环境变量
     
     def get_data_path(self) -> Path:
         """获取数据路径"""

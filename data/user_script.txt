@@ -1,0 +1,15 @@
+
+// 示例SCOPE脚本
+data1 = EXTRACT FROM "table1.txt" 
+        USING DefaultTextExtractor;
+
+data2 = EXTRACT FROM "table2.txt"
+        USING DefaultTextExtractor;
+
+joined_data = SELECT *
+              FROM data1 AS a
+              JOIN data2 AS b
+              ON a.key == b.key;
+
+OUTPUT joined_data TO "output.txt"
+USING DefaultTextOutputter;

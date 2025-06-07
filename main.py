@@ -10,7 +10,7 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from langchain.llms import OpenAI
+from langchain_community.llms import OpenAI
 from scope_agent import ScopeThinkAgent
 from scope_agent.tools.file_reader import FileReaderTool
 from scope_agent.tools.file_recommendation import FileRecommendationTool, DEFAULT_FILE_MAPPING, DEFAULT_PARSER_MAPPING
