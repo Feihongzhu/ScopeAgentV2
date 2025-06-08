@@ -14,25 +14,43 @@ class ContextEnhancer:
         self.enhancement_rules = self._init_enhancement_rules()
     
     def _init_enhancement_rules(self) -> Dict[str, Dict[str, Any]]:
-        """初始化增强规则"""
+        """初始化增强规则 - 基于实际Cosmos SCOPE Job文件结构"""
         return {
             ProblemType.DATA_SKEW.value: {
-                "key_concepts": ["数据倾斜", "热点键", "分区不均", "Join操作"],
-                "priority_files": ["user_script.txt", "data_skew_report.json", "join_analysis.txt"],
-                "analysis_focus": ["分区策略", "Join键分布", "数据量统计"],
-                "common_solutions": ["PartitionBy优化", "热点键处理", "随机盐值"]
+                "key_concepts": ["数据倾斜", "热点键", "分区不均", "Join操作", "SkewRatio", "倾斜任务"],
+                "priority_files": [
+                    "scope.script",  # 原始脚本
+                    "JobStatistics.xml",  # 作业统计（包含倾斜信息）
+                    "__Warnings__.xml",  # 警告信息
+                    "Algebra.xml",  # 执行计划
+                    "__ScopeRuntimeStatistics__.xml"  # 运行时统计
+                ],
+                "analysis_focus": ["分区策略", "Join键分布", "数据量统计", "任务执行时间差异", "倾斜比率"],
+                "common_solutions": ["PartitionBy优化", "热点键处理", "随机盐值", "Join键预处理"]
             },
             ProblemType.EXCESSIVE_SHUFFLE.value: {
-                "key_concepts": ["Shuffle操作", "数据重分布", "网络传输", "Stage性能"],
-                "priority_files": ["user_script.txt", "shuffle_stats.log", "dag_stages.log"],
-                "analysis_focus": ["Shuffle次数", "数据传输量", "Stage依赖关系"],
-                "common_solutions": ["PartitionBy优化", "广播Join", "数据预聚合"]
+                "key_concepts": ["Shuffle操作", "数据重分布", "网络传输", "Stage性能", "ShuffleDataSize"],
+                "priority_files": [
+                    "scope.script",  # 原始脚本
+                    "JobStatistics.xml",  # 作业统计
+                    "__DataMapDfg__.json",  # 数据流图
+                    "Algebra.xml",  # 执行计划
+                    "ScopeVertexDef.xml"  # 顶点定义
+                ],
+                "analysis_focus": ["Shuffle次数", "数据传输量", "Stage依赖关系", "数据流路径"],
+                "common_solutions": ["PartitionBy优化", "广播Join", "数据预聚合", "早期投影"]
             },
             ProblemType.OTHER.value: {
-                "key_concepts": ["性能问题", "配置优化", "资源使用"],
-                "priority_files": ["user_script.txt", "error.log", "config.properties"],
-                "analysis_focus": ["错误信息", "配置参数", "资源瓶颈"],
-                "common_solutions": ["配置调优", "资源扩容", "算法优化"]
+                "key_concepts": ["性能问题", "配置优化", "资源使用", "编译错误", "运行时错误"],
+                "priority_files": [
+                    "Error",  # 错误文件
+                    "__ScopeCodeGenCompileOutput__.txt",  # 编译输出
+                    "__Warnings__.xml",  # 警告信息
+                    "JobInfo.xml",  # 作业信息
+                    "diagnosticsjson"  # 诊断信息
+                ],
+                "analysis_focus": ["错误信息", "配置参数", "资源瓶颈", "编译问题"],
+                "common_solutions": ["配置调优", "资源扩容", "算法优化", "代码修复"]
             }
         }
     

@@ -81,6 +81,20 @@ class ScopeThinkAgent(BaseThinkAgent):
         files_analyzed = []
         
         try:
+            # 第一次迭代前，先读取一些关键文件
+            if not context.files_read:
+                print("\n📄 自动读取关键文件...")
+                initial_files = self._get_initial_files_to_read()
+                for file_name in initial_files:
+                    try:
+                        file_content = self.file_reader.read_file(file_name)
+                        context.files_read.append(file_name)
+                        context.current_analysis += f"\n\n=== {file_name} 内容 ===\n{file_content}"
+                        files_analyzed.append(file_name)
+                        print(f"   ✅ 读取 {file_name}")
+                    except Exception as e:
+                        print(f"   ❌ 无法读取 {file_name}: {str(e)}")
+            
             # 迭代分析过程
             while iteration_state.can_continue():
                 iteration_state.increment_iteration()
@@ -91,7 +105,28 @@ class ScopeThinkAgent(BaseThinkAgent):
                 )
                 
                 # 执行LLM分析
-                response = self.analysis_chain.run(analysis_input)
+                result = self.analysis_chain.invoke(analysis_input)
+                
+                # 调试输出
+                print(f"\n🔍 调试信息:")
+                print(f"LLM返回类型: {type(result)}")
+                print(f"LLM返回键: {list(result.keys()) if isinstance(result, dict) else 'N/A'}")
+                
+                # 尝试不同的解析方式
+                if isinstance(result, dict):
+                    if "text" in result:
+                        response = result["text"]
+                    elif "content" in result:
+                        response = result["content"]
+                    else:
+                        # 取第一个字符串值
+                        response = next((v for v in result.values() if isinstance(v, str)), str(result))
+                else:
+                    response = str(result)
+                
+                print(f"解析后响应长度: {len(response)}")
+                print(f"响应前100字符: {response[:100]}...")
+                print("="*50)
                 
                 # 解析分析结果
                 step_results = self._parse_think_steps(response)
@@ -207,25 +242,40 @@ class ScopeThinkAgent(BaseThinkAgent):
         """解析思考步骤结果"""
         steps = []
         
-        # 简化的解析逻辑，实际可以更复杂
-        for i, step in enumerate(ThinkStep):
-            step_marker = f"[{step.value}]"
-            if step_marker in response:
-                # 提取该步骤的内容
-                start_idx = response.find(step_marker)
+        # 修复：使用正确的THINK步骤格式
+        think_patterns = {
+            ThinkStep.PROBLEM_CLASSIFICATION: "[THINK 1]",
+            ThinkStep.CODE_ANALYSIS: "[THINK 2]", 
+            ThinkStep.EXPERIENCE_ANALYSIS: "[THINK 3]",
+            ThinkStep.INFO_COMPLETENESS: "[THINK 4]",
+            ThinkStep.FINAL_SOLUTION: "[THINK 5]"
+        }
+        
+        print(f"\n🔍 解析THINK步骤...")
+        print(f"响应长度: {len(response)}")
+        
+        for step, pattern in think_patterns.items():
+            if pattern in response:
+                print(f"✅ 找到 {pattern}")
                 
-                # 寻找下一个步骤的开始，如果没有则到结尾
+                # 提取该步骤的内容
+                start_idx = response.find(pattern)
+                
+                # 寻找下一个步骤的开始
                 next_step_idx = len(response)
-                for j, next_step in enumerate(list(ThinkStep)[i+1:], i+1):
-                    next_marker = f"[{next_step.value}]"
-                    if next_marker in response:
-                        next_step_idx = response.find(next_marker)
-                        break
+                for other_step, other_pattern in think_patterns.items():
+                    if other_step != step and other_pattern in response:
+                        other_idx = response.find(other_pattern)
+                        if other_idx > start_idx and other_idx < next_step_idx:
+                            next_step_idx = other_idx
                 
                 content = response[start_idx:next_step_idx].strip()
                 
                 # 检查是否需要更多信息
-                needs_more_info = "需要文件" in content and "是" in content
+                needs_more_info = ("需要文件" in content and "是" in content) or "【需要文件】: 是" in content
+                
+                print(f"   内容长度: {len(content)}")
+                print(f"   需要更多信息: {needs_more_info}")
                 
                 step_result = ThinkStepResult(
                     step=step,
@@ -235,7 +285,10 @@ class ScopeThinkAgent(BaseThinkAgent):
                 )
                 
                 steps.append(step_result)
+            else:
+                print(f"❌ 未找到 {pattern}")
         
+        print(f"总共解析到 {len(steps)} 个步骤")
         return steps
     
     def _smart_read_files(self, context: ContextInfo, iteration_state: IterationState,
@@ -317,4 +370,16 @@ class ScopeThinkAgent(BaseThinkAgent):
         elif len(content) < 200:
             return 0.6
         else:
-            return 0.8 
+            return 0.8
+    
+    def _get_initial_files_to_read(self) -> List[str]:
+        """获取初始应该读取的关键文件"""
+        # 基于优先级读取最重要的文件
+        priority_files = [
+            "Error",  # 错误信息最重要
+            "request.script",  # 用户脚本
+            "__Warnings__.xml",  # 警告信息
+            "JobStatistics.xml",  # 作业统计
+        ]
+        
+        return priority_files 

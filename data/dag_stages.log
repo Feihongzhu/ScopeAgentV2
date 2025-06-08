@@ -1,5 +1,0 @@
-
-Stage 1: Extract data1 - running - 10s
-Stage 2: Extract data2 - running - 15s  
-Stage 3: Join operation - running - 120s
-Stage 4: Output - completed - 5s

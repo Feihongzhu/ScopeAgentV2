@@ -87,7 +87,39 @@ CONFIDENCE_THRESHOLD=0.7
 
 ## 🚀 快速开始
 
-### 基本使用
+### 1. 准备SCOPE Job数据
+
+将您的SCOPE Job目录放置在 `data/scope_jobs/` 下。项目已包含一个真实的示例Job：
+
+```
+data/scope_jobs/NetworkIntermediationByBranch_PPE_910_20240913_040300/
+├── request.script              # SCOPE脚本
+├── Error                       # 错误信息
+├── JobStatistics.xml          # 作业统计
+├── __Warnings__.xml           # 警告信息
+├── __DataMapDfg__.json        # 数据流图
+├── profile                    # 性能分析(756MB)
+└── ... (共15个分析文件)
+```
+
+### 2. 交互式分析
+
+```bash
+python main.py
+```
+
+系统会自动识别Job并提供交互式分析界面：
+- 输入 `demo` 运行演示问题
+- 输入 `files` 查看可用文件  
+- 输入 `quit` 退出程序
+
+### 3. 快速测试
+
+```bash
+python test_real_job.py  # 验证解析器功能
+```
+
+### 4. 编程方式使用
 
 ```python
 from langchain.llms import OpenAI
@@ -100,7 +132,7 @@ from config.settings import settings
 llm = OpenAI(openai_api_key="your_api_key")
 
 # 初始化工具
-file_reader = FileReaderTool(base_path="./data")
+file_reader = FileReaderTool(base_path="./data/scope_jobs/your_job_dir")
 recommendation_tool = FileRecommendationTool(
     file_content_mapping=settings.default_file_mapping,
     parser_functions=settings.default_parser_mapping
@@ -114,17 +146,11 @@ agent = ScopeThinkAgent(
 )
 
 # 执行分析
-question = "我的SCOPE作业运行很慢，Join操作耗时特别长，可能是什么原因？"
+question = "这个作业为什么会超时？是否存在数据倾斜问题？"
 result = agent.analyze(question)
 
 print(f"问题类型: {result.problem_type.value}")
 print(f"解决方案: {result.final_solution}")
-```
-
-### 运行示例
-
-```bash
-python main.py
 ```
 
 ## 🧠 核心功能
@@ -155,12 +181,31 @@ python main.py
 
 ### 4. 支持的文件类型
 
-- `user_script.txt`: 用户SCOPE脚本
-- `dag_stages.log`: DAG运行日志
-- `data_skew_report.json`: 数据倾斜报告
-- `shuffle_stats.log`: Shuffle统计
-- `performance_metrics.json`: 性能指标
-- 其他自定义文件类型
+基于真实Cosmos SCOPE Job文件结构：
+
+**脚本和命令文件**:
+- `scope.script`, `request.script`: SCOPE脚本代码
+- `NebulaCommandLine.txt`: 命令行参数
+
+**作业信息文件**:
+- `JobInfo.xml`: 作业基本信息（ID、时间、资源需求等）
+- `JobStatistics.xml`: 作业统计信息（Stage耗时、数据量等）
+- `Error`: 错误详细信息
+- `diagnosticsjson`: 诊断数据
+
+**执行计划和数据流**:
+- `Algebra.xml`: 查询执行计划
+- `ScopeVertexDef.xml`: 计算节点配置
+- `__DataMapDfg__.json`: 数据流图
+
+**编译和运行时信息**:
+- `__Warnings__.xml`: 编译/运行警告
+- `__CompilerTimers.xml`: 编译时间统计
+- `__ScopeCodeGenCompileOutput__.txt`: 编译输出
+- `__SStreamInfo__.xml`: Stream元数据
+
+**性能分析**:
+- `profile`: 性能分析数据
 
 ## 🔧 扩展开发
 
