@@ -87,7 +87,7 @@ class ScopeThinkAgent(BaseThinkAgent):
                 initial_files = self._get_initial_files_to_read()
                 for file_name in initial_files:
                     try:
-                        file_content = self.file_reader.read_file(file_name)
+                        file_content = self.file_reader.read_single_file(file_name)
                         context.files_read.append(file_name)
                         context.current_analysis += f"\n\n=== {file_name} 内容 ===\n{file_content}"
                         files_analyzed.append(file_name)
@@ -378,6 +378,7 @@ class ScopeThinkAgent(BaseThinkAgent):
         priority_files = [
             "Error",  # 错误信息最重要
             "request.script",  # 用户脚本
+            "__ScopeRuntimeStatistics__.xml", # 作业运行统计信息
             "__Warnings__.xml",  # 警告信息
             "JobStatistics.xml",  # 作业统计
         ]

@@ -295,6 +295,7 @@ DEFAULT_PARSER_MAPPING = {
     "__ScopeCodeGen__.dll.cs": "parse_csharp_code",
     
     # SCOPE脚本解析器
+    "request.script": "parse_scope_script",
     "scope.script": "parse_scope_script",
     
     # 性能分析文件解析器
